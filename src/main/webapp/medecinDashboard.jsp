@@ -1,0 +1,27 @@
+<%@ page import="com.example.exam.model.Medecin" %>
+<%
+  Medecin m = (Medecin) session.getAttribute("medecin");
+  if (m == null) {
+    response.sendRedirect("login.jsp");
+    return;
+  }
+%>
+
+<html>
+<head>
+  <title>Médecin Dashboard</title>
+</head>
+
+<body>
+
+<h2>👨‍⚕️ Dr. <%= m.getNom() %></h2>
+
+<h3>📋 Management</h3>
+
+<a href="rdvList">All Appointments</a><br>
+<a href="todayRdv">Today's Appointments</a><br>
+<a href="patients">Patients List</a><br>
+<a href="logout">Logout</a>
+
+</body>
+</html>
