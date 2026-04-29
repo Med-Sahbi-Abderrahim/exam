@@ -1,0 +1,319 @@
+# SECTION 1 — Page de garde
+
+**Système de Gestion de Cabinet Médical**  
+
+**Étudiants :** Mohamed Sahbi Abderrahim — Hamdi Yangui  
+**Parcours :** 1ère année Génie Logiciel — ISIMS Sfax  
+**Année universitaire :** 2025/2026  
+**Matière :** Technologies de développement JEE 1  
+
+# SECTION 2 — Architecture globale
+
+## 2.1 Stack et couches (observées dans le code)
+
+- **Présentation (JSP)** : vues dans `src/main/webapp/*.jsp` (formulaires HTML + scriptlets JSP).
+- **Contrôleur (Servlets)** : `com.example.exam.servlet.*` avec mappings `@WebServlet` (`/login`, `/patients`, `/medecins`, `/rendezvous`, `/signupPatient`, `/signupMedecin`, `/logout`, `/patientHome`).
+- **Métier / Service**
+  - **Services JPA** : `com.example.exam.service.PatientService`, `MedecinService`, `AuthService` (CRUD + requêtes JPQL via `EntityManager`).
+  - **EJB** : `com.example.exam.ejb.RendezVousEJB` (`@Stateful`) pour la logique “Rendez-vous” (création, annulation, replanification, listes filtrées).
+  - **RMI Registry EJB** : `com.example.exam.rmi.NotificationServiceImpl` (`@Singleton @Startup`) expose un service RMI et gère les callbacks.
+- **Modèle (JPA Entities)** : `com.example.exam.model.Patient`, `Medecin`, `RendezVous` + enum `Statut`.
+- **Repository/DAO** : **pas de package DAO dédié**. L’accès aux données est réalisé directement dans les classes `service/*` et `ejb/*` via `EntityManager` / JPQL.
+- **Base de données** : MySQL (`jdbc:mysql://localhost:3306/medecin`) configurée dans `src/main/resources/META-INF/persistence.xml`.
+
+## 2.2 Base de données & JPA/ORM
+
+- **Technologie DB (driver)** : `com.mysql.cj.jdbc.Driver` (dépendance Maven `mysql-connector-j`).
+- **Connexion JDBC (persistence.xml)** :
+  - `jakarta.persistence.jdbc.url = jdbc:mysql://localhost:3306/medecin`
+  - `jakarta.persistence.jdbc.user = root`
+  - `jakarta.persistence.jdbc.password = root`
+- **JPA** : API `jakarta.persistence` (projet empaqueté en `war`, Jakarta EE 10).
+- **Fournisseur ORM** : **Hibernate** (propriétés explicites) :
+  - `hibernate.dialect = org.hibernate.dialect.MySQL8Dialect`
+  - `hibernate.hbm2ddl.auto = update`
+  - `hibernate.show_sql = true`
+
+## 2.3 Diagramme ASCII (flux principal)
+
+```text
+Navigateur
+   |
+   v
+  JSP (src/main/webapp/*.jsp)
+   |  (forms: action="login|patients|medecins|rendezvous|signup...")
+   v
+Servlets (@WebServlet)
+   |
+   v
+Services / EJB (JPA EntityManager + JPQL)
+   |
+   v
+MySQL (schema: medecin)
+```
+
+## 2.4 Dépendances Maven (pom.xml) et rôle
+
+- `jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0` (**provided**) : CDI (injection/gestion de contexte côté container).
+- `jakarta.ws.rs:jakarta.ws.rs-api:4.0.0` (**provided**) : API JAX-RS (présence de `HelloApplication` / `HelloResource`).
+- `jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1` (**provided**) : API JSP pour les pages `.jsp`.
+- `jakarta.servlet:jakarta.servlet-api:6.1.0` (**provided**) : API Servlet (contrôleurs `HttpServlet`).
+- `jakarta.platform:jakarta.jakartaee-api:10.0.0` (**provided**) : API Jakarta EE (EJB, JPA, annotations, etc.).
+- `jakarta.persistence:jakarta.persistence-api:3.1.0` (**provided**) : API JPA (entities, `EntityManager`).
+- `jakarta.ejb:jakarta.ejb-api:4.0.1` (**provided**) : API EJB (`@Stateful`, `@Singleton`, `@Startup`, `@EJB`).
+- `com.mysql:mysql-connector-j:8.3.0` : driver JDBC MySQL.
+- `org.junit.jupiter:junit-jupiter-api:${junit.version}` (**test**) : API JUnit 5.
+- `org.junit.jupiter:junit-jupiter-engine:${junit.version}` (**test**) : moteur d’exécution JUnit 5.
+
+# SECTION 3 — Organisation du projet (packages)
+
+## 3.1 Arborescence réelle
+
+### 3.1.1 `src/main/java`
+
+```text
+src/main/java
+└─ com/example/exam
+   ├─ HelloApplication.java
+   ├─ HelloResource.java
+   ├─ ejb
+   │  └─ RendezVousEJB.java
+   ├─ model
+   │  ├─ Medecin.java
+   │  ├─ Patient.java
+   │  ├─ RendezVous.java
+   │  └─ Statut.java
+   ├─ rmi
+   │  ├─ NotificationListener.java
+   │  ├─ NotificationRegistry.java
+   │  ├─ NotificationRmiAdapter.java
+   │  ├─ NotificationService.java
+   │  ├─ NotificationServiceImpl.java
+   │  └─ PatientClient.java
+   ├─ service
+   │  ├─ AuthService.java
+   │  ├─ MedecinService.java
+   │  └─ PatientService.java
+   └─ servlet
+      ├─ LoginServlet.java
+      ├─ LogoutServlet.java
+      ├─ MedecinServlet.java
+      ├─ PatientHomeServlet.java
+      ├─ PatientServlet.java
+      ├─ RendezVousServlet.java
+      ├─ SignupMedecinServlet.java
+      └─ SignupPatientServlet.java
+```
+
+### 3.1.2 `src/main/webapp`
+
+```text
+src/main/webapp
+├─ index.jsp
+├─ login.jsp
+├─ SignupPatient.jsp
+├─ SignupMedecin.jsp
+├─ medecinDashboard.jsp
+├─ patientDashboard.jsp
+├─ patients.jsp
+├─ form.jsp
+├─ medecins.jsp
+├─ medecinPatients.jsp
+├─ rendezvous.jsp
+├─ rendezvousForm.jsp
+├─ rendezvousReschedule.jsp
+└─ css
+   └─ style.css
+```
+
+## 3.2 Rôle de chaque package (1 phrase)
+
+- `com.example.exam` : point d’entrée JAX-RS (configuration `@ApplicationPath("/api")`) et ressource de test `GET /api/hello-world`.
+- `com.example.exam.servlet` : contrôleurs web (Servlets) qui traitent les requêtes HTTP, pilotent la navigation et alimentent les JSP via des attributs `request`.
+- `com.example.exam.service` : services applicatifs “simples” utilisant JPA (`EntityManager`) pour CRUD/requêtes JPQL sur `Patient` et `Medecin` (et authentification).
+- `com.example.exam.ejb` : logique métier des rendez-vous via un EJB stateful, incluant requêtes filtrées et déclenchement de notifications.
+- `com.example.exam.model` : modèle de données JPA (entités + enum `Statut`) persisté en base MySQL.
+- `com.example.exam.rmi` : module RMI + callback (interfaces `Remote`, adaptateur exporté, serveur démarré au déploiement, et client de démonstration).
+
+## 3.3 Tableau des classes (type + responsabilité)
+
+| Class Name | Type | Responsibility |
+|---|---|---|
+| `HelloApplication` | REST (JAX-RS Application) | Déclare le préfixe API via `@ApplicationPath("/api")`. |
+| `HelloResource` | REST (JAX-RS Resource) | Endpoint `GET /api/hello-world` qui retourne `"Hello, World!"`. |
+| `RendezVousEJB` | Service (EJB Stateful) | CRUD/queries RDV (today/past/all/future/past patient) + notifications via `NotificationRegistry`. |
+| `Patient` | Model (JPA Entity) | Entité `patient` (id, nom, prenom, email unique, password, telephone, dateNaissance, relation RDV). |
+| `Medecin` | Model (JPA Entity) | Entité `medecin` (id, nom, prenom, specialite, email, password, relation RDV). |
+| `RendezVous` | Model (JPA Entity) | Entité `rendezvous` (dateRendezVous, motif, `Statut`, liens `Patient`/`Medecin`). |
+| `Statut` | Model (Enum) | Enum de statut: `PLANIFIE`, `TERMINE`, `ANNULE`. |
+| `AuthService` | Service | Enregistrement + authentification patient/médecin via requêtes JPQL sur email/password. |
+| `PatientService` | Service | Gestion patients: liste, ajout, recherche, modification, suppression conditionnée à l’absence de RDV `PLANIFIE`. |
+| `MedecinService` | Service | Gestion médecins: ajout, liste, recherche par spécialité, liste des patients via RDV, suppression si aucun RDV. |
+| `LoginServlet` | Servlet | POST `/login`: authentifie via JPA, stocke `session.patient`/`session.medecin`, redirige vers `/patientHome` ou `medecinDashboard.jsp`. |
+| `LogoutServlet` | Servlet | GET `/logout`: invalide la session et redirige vers `login.jsp`. |
+| `SignupPatientServlet` | Servlet | POST `/signupPatient`: persist `Patient` (nom/prenom/email/password/telephone) puis redirige `login.jsp`. |
+| `SignupMedecinServlet` | Servlet | POST `/signupMedecin`: persist `Medecin` (nom/prenom/email/password/specialite) puis redirige `login.jsp`. |
+| `PatientHomeServlet` | Servlet | GET `/patientHome`: contrôle session patient, charge `futureRdvs`/`pastRdvs` via `RendezVousEJB`, forward `patientDashboard.jsp`. |
+| `PatientServlet` | Servlet | GET `/patients` (list/search/edit/delete) + POST `/patients` (create/update patient) avec forwards `patients.jsp` / `form.jsp`. |
+| `MedecinServlet` | Servlet | GET `/medecins` (list/search/patients/delete) + POST `/medecins` (add), forwards `medecins.jsp` / `medecinPatients.jsp`. |
+| `RendezVousServlet` | Servlet | GET `/rendezvous` (listToday/listPast/listAll/createForm/rescheduleForm/cancel) + POST (create/reschedule), forwards vers JSP RDV. |
+| `NotificationService` | RMI (Remote interface) | Contrat RMI: inscription callback + récupération de RDV d’un patient via RMI. |
+| `NotificationListener` | RMI (Callback Remote interface) | Callback RMI: méthode `onNotification(String)` appelée par le serveur. |
+| `NotificationRegistry` | Service (EJB Local interface) | Contrat interne (côté serveur) pour enregistrer un listener, obtenir RDV, et notifier un patient. |
+| `NotificationRmiAdapter` | RMI (Remote adapter) | Objet exporté RMI (`UnicastRemoteObject`) qui délègue vers `NotificationRegistry`. |
+| `NotificationServiceImpl` | Service (EJB Singleton + RMI bootstrap) | Démarre le registry RMI, rebind le service, maintient `listeners` et appelle `listener.onNotification(...)`. |
+| `PatientClient` | Client (RMI demo) | Client standalone: lookup du service, export d’un listener, `registerListener`, `getAppointments`, attente callbacks. |
+
+# SECTION 4 — Captures d'écran des interfaces JSP
+
+> Remarque : la section décrit les écrans à partir du code JSP (structure, formulaires, tables et endpoints). Les URL indiquées correspondent soit au mapping servlet (ex. `/patients`) soit à l’accès direct au fichier JSP (ex. `/login.jsp`).
+
+## `index.jsp`
+
+Page d’accueil avec 3 liens de navigation (login, inscription patient, inscription médecin). Elle ne soumet pas de formulaire; elle sert uniquement de point d’entrée vers les pages d’authentification/inscription.  
+**URL** : `/index.jsp`
+
+## `login.jsp`
+
+Formulaire de connexion contenant `email`, `password` et un `select role` (patient/médecin). Le formulaire poste vers le contrôleur d’authentification.  
+**URL mapping** : `/login` (form `action="login"`, `method="post"`) ; page accessible en `/login.jsp`.
+
+## `SignupPatient.jsp`
+
+Formulaire d’inscription patient avec champs `nom`, `prenom`, `email`, `password`, `telephone`. Le formulaire poste vers le servlet d’inscription patient qui persiste l’entité `Patient`.  
+**URL mapping** : `/signupPatient` (form `action="signupPatient"`, `method="post"`) ; page accessible en `/SignupPatient.jsp`.
+
+## `SignupMedecin.jsp`
+
+Formulaire d’inscription médecin avec `nom`, `prenom`, `email`, `password`, `specialite`. Le formulaire poste vers le servlet d’inscription médecin qui persiste l’entité `Medecin`.  
+**URL mapping** : `/signupMedecin` (form `action="signupMedecin"`, `method="post"`) ; page accessible en `/SignupMedecin.jsp`.
+
+## `medecinDashboard.jsp`
+
+Dashboard protégé par session (`session.getAttribute("medecin")`), sinon redirection vers `login.jsp`. Il fournit des liens de navigation vers la gestion des patients, des médecins, des rendez-vous (avec `action=listToday`) et la déconnexion.  
+**URL mapping** : `/patients`, `/medecins`, `/rendezvous?action=listToday`, `/logout` ; page accessible en `/medecinDashboard.jsp`.
+
+## `patients.jsp`
+
+Écran “Liste des Patients” affichant une table (nom, email, actions) alimentée par l’attribut request `patients`. Il contient un formulaire de recherche (`action=search`, `keyword`) et des liens `Edit` / `Delete` sur le servlet patients.  
+**URL mapping** : `/patients` (GET `action=list|search|edit|delete`) ; JSP servie par forward depuis `PatientServlet` via `patients.jsp`.
+
+## `form.jsp`
+
+Formulaire de création/modification d’un patient (id caché + `nom`, `prenom`, `email`, `telephone`, `dateNaissance`). Il consomme `request.getAttribute("patient")` en mode édition et poste vers le servlet patients.  
+**URL mapping** : `/patients` (POST create/update) ; en édition: `/patients?action=edit&id=...` forward vers `form.jsp`. Page accessible aussi en `/form.jsp` (lien “Ajouter Patient”).
+
+## `medecins.jsp`
+
+Page de liste médecins affichant une table alimentée par `request.getAttribute("medecins")`. Elle contient un formulaire de recherche (`action=search`, `spec`) et un formulaire d’ajout (POST) avec `nom`, `prenom`, `specialite`, `email`; actions “Patients” et “Supprimer” utilisent des paramètres GET.  
+**URL mapping** : `/medecins` (GET `action=list|search|patients|delete`, POST add) ; JSP servie par forward depuis `MedecinServlet`.
+
+## `medecinPatients.jsp`
+
+Écran affichant la liste des patients associés à un médecin (résultat du service `getPatients(medecinId)`), via `request.getAttribute("doctorPatients")` et `request.getAttribute("medecin")`. Accès déclenché depuis la liste des médecins (action `patients`).  
+**URL mapping** : `/medecins?action=patients&id=...` (forward vers `medecinPatients.jsp`).
+
+## `rendezvous.jsp`
+
+Page de listing des rendez-vous avec filtres (liens `listToday`, `listPast`, `listAll`) et actions “Annuler”/“Reporter”. La table est alimentée par `request.getAttribute("rdvs")` et un indicateur `filter`.  
+**URL mapping** : `/rendezvous?action=listToday|listPast|listAll|cancel|rescheduleForm|createForm` (GET) ; JSP servie par forward depuis `RendezVousServlet`.
+
+## `rendezvousForm.jsp`
+
+Formulaire de création d’un RDV (select `patientId`, select `medecinId`, `datetime-local dateRendezVous`, `motif`). Les listes proviennent de `request.getAttribute("patients")` et `request.getAttribute("medecins")`.  
+**URL mapping** : `/rendezvous?action=createForm` (GET → forward), puis POST `/rendezvous` avec `action=create`.
+
+## `rendezvousReschedule.jsp`
+
+Formulaire de replanification d’un RDV (champ `datetime-local newDate` + hidden `id`). La page attend `request.getAttribute("rdvId")` fourni par `RendezVousServlet` (action `rescheduleForm`).  
+**URL mapping** : `/rendezvous?action=rescheduleForm&id=...` (GET → forward), puis POST `/rendezvous` avec `action=reschedule`.
+
+## `patientDashboard.jsp`
+
+Dashboard patient protégé par session (`session.getAttribute("patient")`). Il affiche deux tables: rendez-vous à venir (`futureRdvs`) et passés (`pastRdvs`), attributs chargés par `PatientHomeServlet` via `RendezVousEJB`.  
+**URL mapping** : `/patientHome` (GET → forward vers `patientDashboard.jsp`) ; sortie via `/logout`.
+
+# SECTION 5 — Module RMI + Callback
+
+## 5.1 RMI (définition et usage dans ce projet)
+
+RMI (Remote Method Invocation) permet à un client Java d’invoquer des méthodes d’objets situés dans une autre JVM via un registre RMI. Ici, il est utilisé pour exposer un service de consultation des rendez-vous d’un patient (`getAppointments`) et pour pousser des notifications serveur→client via callback (`NotificationListener`), déclenchées lors des actions RDV côté EJB.
+
+## 5.2 Interfaces Remote (signatures exactes)
+
+### `NotificationService` (Remote)
+
+```java
+void registerListener(int patientId, NotificationListener listener) throws RemoteException;
+
+List<RendezVous> getAppointments(int patientId) throws RemoteException;
+```
+
+### `NotificationListener` (Remote, callback)
+
+```java
+void onNotification(String message) throws RemoteException;
+```
+
+## 5.3 Serveur RMI (implémentation) et rôle
+
+- **Classe serveur** : `com.example.exam.rmi.NotificationServiceImpl` (EJB `@Singleton @Startup`) implémente `NotificationRegistry` (interface locale côté serveur).
+- **Bootstrap RMI au déploiement** (`@PostConstruct init()`):
+  - Fixe `java.rmi.server.hostname` à `"localhost"`.
+  - Crée ou récupère le registre RMI sur un port constant.
+  - Exporte un objet RMI `NotificationRmiAdapter` et le publie via `registry.rebind("NotificationService", exportedAdapter)`.
+- **Données** : conserve les callbacks dans `Map<Integer, NotificationListener> listeners`.
+- **Accès DB** : récupère les rendez-vous via JPA (JPQL) dans `getAppointments(int patientId)` avec `JOIN FETCH` patient/médecin.
+
+## 5.4 Mécanisme de callback (inscription + notification)
+
+### Inscription du client (register)
+
+Le client exporte un objet callback et l’enregistre :
+
+- Dans `PatientClient` :
+  - lookup : `registry.lookup("NotificationService")`
+  - export callback :
+    - `UnicastRemoteObject.exportObject(new NotificationListener(){...}, 0)`
+  - enregistrement :
+    - `service.registerListener(patientId, listener)`
+
+### Notification serveur → client
+
+- Côté application (métier RDV) : `RendezVousEJB` appelle
+  - `notificationRegistry.notifyPatient(patientId, "RDV cree")`
+  - `notificationRegistry.notifyPatient(patientId, "RDV annule")`
+  - `notificationRegistry.notifyPatient(patientId, "RDV replanifie")`
+- Côté serveur RMI (`NotificationServiceImpl.notifyPatient`) :
+  - récupère `NotificationListener listener = listeners.get(patientId)`
+  - envoie la notification via `listener.onNotification(message)`
+
+## 5.5 Diagramme de séquence ASCII
+
+```text
+Client (PatientClient)
+  |
+  | LocateRegistry.getRegistry("localhost", 1099)
+  v
+RMI Registry (port 1099)
+  |
+  | lookup("NotificationService")
+  v
+Server (NotificationRmiAdapter -> NotificationServiceImpl)
+  |
+  | registerListener(patientId, listener)
+  v
+Server stocke callback (listeners[patientId] = listener)
+  |
+  | ... (plus tard, côté appli: RendezVousEJB -> notifyPatient)
+  v
+Server appelle callback: listener.onNotification(message)
+  |
+  v
+Client reçoit message (onNotification)
+```
+
+## 5.6 Port RMI
+
+Le port RMI est **1099**, défini dans `NotificationServiceImpl` (`private static final int RMI_PORT = 1099;`) et utilisé côté client dans `LocateRegistry.getRegistry("localhost", 1099)`.
+

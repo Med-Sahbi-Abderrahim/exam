@@ -3,6 +3,10 @@
     Long rdvId = (Long) request.getAttribute("rdvId");
 %>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+</head>
 <body>
 
 <h2>Reporter un rendez-vous</h2>

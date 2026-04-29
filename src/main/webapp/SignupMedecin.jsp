@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Signup Medecin</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 
 <body>

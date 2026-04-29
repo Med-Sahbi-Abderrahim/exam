@@ -6,6 +6,10 @@
             (java.util.List<com.example.exam.model.Medecin>) request.getAttribute("medecins");
 %>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+</head>
 <body>
 
 <h2>Nouveau rendez-vous</h2>

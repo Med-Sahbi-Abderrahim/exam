@@ -8,7 +8,8 @@
             (java.util.List<com.example.exam.model.RendezVous>) request.getAttribute("rdvs");
 %>
 <html>
-<head><title>Rendez-vous</title></head>
+<head><title>Rendez-vous</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css"></head>
 <body>
 
 <h2>Rendez-vous</h2>

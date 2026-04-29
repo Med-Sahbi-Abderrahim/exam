@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Hospital System - Home</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <style>
         body {
             font-family: Arial;
