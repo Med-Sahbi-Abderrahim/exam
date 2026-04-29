@@ -1,4 +1,4 @@
-<form action="SignupPatientServlet" method="post">
+<form action="signupPatient" method="post">
   Nom: <input name="nom"><br>
   Prenom: <input name="prenom"><br>
   Email: <input name="email"><br>

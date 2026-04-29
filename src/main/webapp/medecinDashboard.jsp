@@ -18,9 +18,9 @@
 
 <h3>📋 Management</h3>
 
-<a href="rdvList">All Appointments</a><br>
-<a href="todayRdv">Today's Appointments</a><br>
 <a href="patients">Patients List</a><br>
+<a href="medecins">Medecins List</a><br>
+<a href="<%= request.getContextPath() %>/rendezvous?action=listToday">Rendez-vous</a><br>
 <a href="logout">Logout</a>
 
 </body>

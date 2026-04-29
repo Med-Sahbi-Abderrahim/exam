@@ -1,10 +1,15 @@
 package com.example.exam.model;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-public class RendezVous {
+@Table(name = "rendezvous")
+public class RendezVous implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

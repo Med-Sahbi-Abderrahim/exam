@@ -2,23 +2,19 @@ package com.example.exam.servlet;
 
 import com.example.exam.model.Medecin;
 import com.example.exam.model.Patient;
-import com.example.exam.service.AuthService;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.List;
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
-
-    private EntityManagerFactory emf =
-            Persistence.createEntityManagerFactory("default");
 
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
@@ -29,6 +25,7 @@ public class LoginServlet extends HttpServlet {
 
         HttpSession session = req.getSession();
 
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("default");
         EntityManager em = emf.createEntityManager();
 
         try {
@@ -43,7 +40,7 @@ public class LoginServlet extends HttpServlet {
                         .getSingleResult();
 
                 session.setAttribute("patient", p);
-                resp.sendRedirect("patientDashboard.jsp");
+                resp.sendRedirect(req.getContextPath() + "/patientHome");
 
             } else {
 
@@ -60,6 +57,9 @@ public class LoginServlet extends HttpServlet {
 
         } catch (Exception e) {
             resp.sendRedirect("login.jsp?error=1");
+        } finally {
+            em.close();
+            emf.close();
         }
     }
 }

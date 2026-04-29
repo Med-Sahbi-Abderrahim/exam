@@ -56,13 +56,24 @@ public class PatientServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String id = request.getParameter("id");
+        String dateStr = request.getParameter("dateNaissance");
 
         Patient p = new Patient();
         p.setNom(request.getParameter("nom"));
         p.setPrenom(request.getParameter("prenom"));
         p.setEmail(request.getParameter("email"));
         p.setTelephone(request.getParameter("telephone"));
-        p.setDateNaissance(LocalDate.parse(request.getParameter("dateNaissance")));
+
+        LocalDate dateNaissance = null;
+        if (dateStr != null && !dateStr.isBlank()) {
+            dateNaissance = LocalDate.parse(dateStr);
+        } else if (id != null && !id.isEmpty()) {
+            Patient existing = service.getById(Long.parseLong(id));
+            if (existing != null) {
+                dateNaissance = existing.getDateNaissance();
+            }
+        }
+        p.setDateNaissance(dateNaissance);
 
         if (id == null || id.isEmpty()) {
             service.addPatient(p);

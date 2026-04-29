@@ -21,7 +21,20 @@ public class MedecinService {
     // b. Lister
     public List<Medecin> getAll() {
         EntityManager em = emf.createEntityManager();
-        return em.createQuery("SELECT m FROM Medecin m", Medecin.class).getResultList();
+        try {
+            return em.createQuery("SELECT m FROM Medecin m", Medecin.class).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public Medecin findById(Long id) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            return em.find(Medecin.class, id);
+        } finally {
+            em.close();
+        }
     }
 
     // c. Rechercher par spécialité
@@ -36,11 +49,15 @@ public class MedecinService {
     // d. Patients d’un médecin
     public List<Patient> getPatients(Long medecinId) {
         EntityManager em = emf.createEntityManager();
-        return em.createQuery(
-                        "SELECT DISTINCT r.patient FROM RendezVous r WHERE r.medecin.id = :id",
-                        Patient.class)
-                .setParameter("id", medecinId)
-                .getResultList();
+        try {
+            return em.createQuery(
+                            "SELECT DISTINCT r.patient FROM RendezVous r WHERE r.medecin.id = :id",
+                            Patient.class)
+                    .setParameter("id", medecinId)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
     }
 
     // e. Supprimer médecin (si aucun rendez-vous)

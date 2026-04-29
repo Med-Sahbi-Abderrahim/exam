@@ -18,7 +18,7 @@
     Email: <input type="email" name="email" value="<%= (p != null ? p.getEmail() : "") %>"/><br>
     Telephone: <input type="text" name="telephone" value="<%= (p != null ? p.getTelephone() : "") %>"/><br>
     Date Naissance: <input type="date" name="dateNaissance"
-                           value="<%= (p != null ? p.getDateNaissance() : "") %>"/><br>
+                           value="<%= (p != null && p.getDateNaissance() != null ? p.getDateNaissance().toString() : "") %>"/><br>
 
     <button type="submit">Save</button>
 </form>

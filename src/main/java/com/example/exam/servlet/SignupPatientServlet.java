@@ -1,23 +1,17 @@
 package com.example.exam.servlet;
 
 import com.example.exam.model.Patient;
-import com.example.exam.service.PatientService;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.*;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.List;
 @WebServlet("/signupPatient")
 public class SignupPatientServlet extends HttpServlet {
-
-    private EntityManagerFactory emf =
-            Persistence.createEntityManagerFactory("default");
 
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -29,11 +23,16 @@ public class SignupPatientServlet extends HttpServlet {
         p.setPassword(req.getParameter("password"));
         p.setTelephone(req.getParameter("telephone"));
 
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("default");
         EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        em.persist(p);
-        em.getTransaction().commit();
-
-        resp.sendRedirect("login.jsp");
+        try {
+            em.getTransaction().begin();
+            em.persist(p);
+            em.getTransaction().commit();
+            resp.sendRedirect("login.jsp");
+        } finally {
+            em.close();
+            emf.close();
+        }
     }
 }
